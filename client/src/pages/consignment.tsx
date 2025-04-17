@@ -688,7 +688,7 @@ const Consignment = () => {
                             total + (item.quantity - (item.returnedQuantity || 0)), 0) || 0
                         )}
                       </div>
-                      {consignment.status === "sebagian" && (
+                      {(consignment.status === "sebagian" || consignment.status === "lunas") && (
                         <div className="text-xs text-amber-600">
                           {formatNumber(
                             // Hitung item terjual dari consignment items yang sudah direturn
