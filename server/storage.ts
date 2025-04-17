@@ -526,10 +526,16 @@ export class MemStorage implements IStorage {
       c.status === "aktif" || c.status === "sebagian"
     );
     
-    // Get total consigned items
-    const totalConsigned = consignments.reduce((total, consignment) => {
-      return total + consignment.totalItems;
-    }, 0);
+    // Get total consigned items that are not sold yet
+    let totalConsigned = 0;
+    for (const consignment of consignments) {
+      if (consignment.items && Array.isArray(consignment.items)) {
+        for (const item of consignment.items) {
+          // Count only items that have not been returned or sold
+          totalConsigned += item.quantity - (item.returnedQuantity || 0);
+        }
+      }
+    }
     
     // Get number of active resellers
     const activeResellerIds = new Set(
