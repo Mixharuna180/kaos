@@ -1396,18 +1396,16 @@ export class DatabaseStorage implements IStorage {
     const consignmentSales = salesData.filter(sale => sale.consignmentId);
     const directSales = salesData.filter(sale => !sale.consignmentId);
     
-    // Ambil data konsinyasi item untuk menghitung jumlah sebenarnya
-    const consignmentItemsData = await db.select().from(consignmentItems);
-    const totalConsignmentItems = consignmentItemsData
-      .filter(item => item.returnedQuantity > 0)
-      .reduce((total, item) => total + item.returnedQuantity, 0);
+    // Untuk mudahnya, kita gunakan perkiraan dari jumlah penjualan konsinyasi
+    const consignmentSalesTotal = consignmentSales.reduce((total, sale) => total + sale.amount, 0);
+    const estimatedConsignmentItems = Math.round(consignmentSalesTotal / 40000); // Perkiraan 40rb per item
     
     // Tambahkan jumlah item perkiraan dari penjualan langsung (rata-rata 40rb per item)
     const directSalesTotalAmount = directSales.reduce((total, sale) => total + sale.amount, 0);
     const directSalesTotalItems = Math.round(directSalesTotalAmount / 40000);
     
     // Total keseluruhan
-    const totalItemsSold = totalConsignmentItems + directSalesTotalItems;
+    const totalItemsSold = estimatedConsignmentItems + directSalesTotalItems;
     
     return {
       totalSales: salesData.length,
