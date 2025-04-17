@@ -5,6 +5,11 @@ import { insertProductSchema, insertResellerSchema, insertConsignmentSchema, ins
 import { ZodError } from "zod";
 import { fromZodError } from "zod-validation-error";
 
+// Helper function untuk memformat angka
+function formatNumber(amount: number): string {
+  return new Intl.NumberFormat('id-ID').format(amount);
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Error handler helper
   const handleError = (res: any, error: any) => {
@@ -410,7 +415,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create consignment sale
   app.post("/api/sales/consignment", async (req, res) => {
     try {
-      const { consignmentId, amount, saleCode, notes } = req.body;
+      const { consignmentId, amount, saleCode, notes, items } = req.body;
       
       // Validate data
       if (!consignmentId) {
@@ -435,7 +440,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
         notes
       });
       
-      return res.status(201).json(sale);
+      // Calculate items to reduce from consignment
+      let totalItemsSold = 0;
+      
+      // If items are provided, update consignment items
+      if (items && Array.isArray(items) && items.length > 0) {
+        // Get all consignment items
+        const consignmentItems = await storage.getConsignmentItems(consignmentId);
+        
+        // Process each sold item
+        for (const soldItem of items) {
+          const { productId, quantity } = soldItem;
+          
+          // Find matching consignment item
+          const consignmentItem = consignmentItems.find(item => item.productId === productId);
+          
+          if (consignmentItem) {
+            // Calculate the available quantity (original - returned)
+            const availableQuantity = consignmentItem.quantity - consignmentItem.returnedQuantity;
+            
+            // Verify enough items exist
+            if (quantity > availableQuantity) {
+              return res.status(400).json({
+                message: `Jumlah penjualan melebihi jumlah tersedia untuk produk ID ${productId} (tersedia: ${availableQuantity})`
+              });
+            }
+            
+            // Add to sold total
+            totalItemsSold += quantity;
+            
+            // Update the consignment item by increasing returned quantity 
+            // (using the same mechanism as returns to track items no longer in consignment)
+            await storage.updateConsignmentItem(consignmentItem.id, {
+              returnedQuantity: consignmentItem.returnedQuantity + quantity
+            });
+          }
+        }
+      }
+      
+      // Update the consignment: reduce totalValue, increment paidAmount
+      // Calculate remaining value after this sale
+      const newTotalValue = Math.max(0, consignment.totalValue - amount);
+      const newPaidAmount = consignment.paidAmount + amount;
+      
+      // Calculate new totalItems
+      const newTotalItems = Math.max(0, consignment.totalItems - totalItemsSold);
+      
+      // Determine the new status based on amounts
+      let newStatus = consignment.status;
+      if (newTotalValue === 0) {
+        // If all value is paid, change status to "lunas"
+        newStatus = "lunas";
+      } else if (newPaidAmount > 0 && newTotalValue > 0) {
+        // If partially paid, change status to "sebagian"
+        newStatus = "sebagian";
+      }
+      
+      // Update the consignment
+      await storage.updateConsignment(consignmentId, {
+        totalValue: newTotalValue, 
+        paidAmount: newPaidAmount,
+        totalItems: newTotalItems,
+        status: newStatus
+      });
+      
+      // Create activity record
+      await storage.createActivity({
+        activityType: "penjualan",
+        description: `Penjualan konsinyasi: Rp ${formatNumber(amount)} dari ${consignment.consignmentCode} (${totalItemsSold} item)`,
+        relatedId: sale.id
+      });
+      
+      // Get the updated consignment and include it in the response
+      const updatedConsignment = await storage.getConsignment(consignmentId);
+      
+      return res.status(201).json({
+        sale,
+        consignment: updatedConsignment
+      });
     } catch (error) {
       return handleError(res, error);
     }
