@@ -491,6 +491,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return handleError(res, error);
     }
   });
+  
+  // Update konsinyasi
+  app.patch("/api/consignments/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { notes } = req.body;
+      
+      // Mendapatkan konsinyasi
+      const consignment = await storage.getConsignment(id);
+      if (!consignment) {
+        return res.status(404).json({ message: "Konsinyasi tidak ditemukan" });
+      }
+      
+      // Update konsinyasi
+      const updatedConsignment = await storage.updateConsignment(id, {
+        notes
+      });
+      
+      // Mencatat aktivitas
+      await storage.createActivity({
+        activityType: "konsinyasi",
+        description: `Konsinyasi ${consignment.consignmentCode} diperbarui`,
+        relatedId: id,
+        timestamp: new Date()
+      });
+      
+      return res.json(updatedConsignment);
+    } catch (error) {
+      return handleError(res, error);
+    }
+  });
 
   // Get sales statistics
   app.get("/api/stats/sales", async (req, res) => {
