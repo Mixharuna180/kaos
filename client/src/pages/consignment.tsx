@@ -14,6 +14,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -48,8 +54,10 @@ import {
   CircleCheck,
   CircleMinus,
   Trash,
+  CalendarIcon,
+  Loader2
 } from "lucide-react";
-import { formatNumber, formatCurrency, formatDate, generateConsignmentCode } from "@/lib/utils";
+import { cn, formatNumber, formatCurrency, formatDate, generateConsignmentCode } from "@/lib/utils";
 
 // Form schema for reseller
 const resellerFormSchema = z.object({
