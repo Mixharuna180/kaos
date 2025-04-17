@@ -685,7 +685,11 @@ const Consignment = () => {
                       </div>
                       {consignment.status === "sebagian" && (
                         <div className="text-xs text-amber-600">
-                          {formatNumber(consignment.paidAmount / 40000)} item terjual
+                          {formatNumber(
+                            // Hitung item terjual dari consignment items yang sudah direturn
+                            consignment.items?.reduce((total, item) => 
+                              total + (item.returnedQuantity || 0), 0) || 0
+                          )} item terjual
                         </div>
                       )}
                     </td>
