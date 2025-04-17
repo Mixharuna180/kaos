@@ -91,6 +91,10 @@ const returnFormSchema = z.object({
 // Form schema for edit
 const editFormSchema = z.object({
   notes: z.string().optional(),
+  totalItems: z.number().min(0, "Jumlah tidak boleh negatif"),
+  totalValue: z.number().min(0, "Nilai total tidak boleh negatif"),
+  takenDate: z.date(),
+  status: z.enum(["aktif", "lunas", "sebagian", "return"]),
 });
 
 type ResellerFormValues = z.infer<typeof resellerFormSchema>;
@@ -168,6 +172,10 @@ const Consignment = () => {
     resolver: zodResolver(editFormSchema),
     defaultValues: {
       notes: "",
+      totalItems: 0,
+      totalValue: 0,
+      takenDate: new Date(),
+      status: "aktif",
     },
   });
   
@@ -383,6 +391,10 @@ const Consignment = () => {
     setSelectedConsignment(consignment);
     editForm.reset({
       notes: consignment.notes || "",
+      totalItems: consignment.totalItems || 0,
+      totalValue: consignment.totalValue || 0,
+      takenDate: consignment.takenDate ? new Date(consignment.takenDate) : new Date(),
+      status: consignment.status || "aktif",
     });
     setIsEditDialogOpen(true);
   };
@@ -1311,6 +1323,113 @@ const Consignment = () => {
           
           <Form {...editForm}>
             <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="totalItems"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Jumlah Total</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          {...field}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={editForm.control}
+                  name="totalValue"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nilai Total</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          {...field}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={editForm.control}
+                  name="takenDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Tanggal Ambil</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              {field.value ? (
+                                formatDate(field.value)
+                              ) : (
+                                <span>Pilih tanggal</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            disabled={(date) =>
+                              date > new Date() || date < new Date("1900-01-01")
+                            }
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={editForm.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Pilih status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="aktif">Aktif</SelectItem>
+                          <SelectItem value="lunas">Lunas</SelectItem>
+                          <SelectItem value="sebagian">Sebagian</SelectItem>
+                          <SelectItem value="return">Return</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
               <FormField
                 control={editForm.control}
                 name="notes"

@@ -496,7 +496,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/consignments/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const { notes } = req.body;
+      const { notes, totalItems, totalValue, takenDate, status } = req.body;
       
       // Mendapatkan konsinyasi
       const consignment = await storage.getConsignment(id);
@@ -506,15 +506,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update konsinyasi
       const updatedConsignment = await storage.updateConsignment(id, {
-        notes
+        notes,
+        totalItems,
+        totalValue,
+        takenDate: takenDate ? new Date(takenDate) : consignment.takenDate,
+        status
       });
       
       // Mencatat aktivitas
       await storage.createActivity({
         activityType: "konsinyasi",
         description: `Konsinyasi ${consignment.consignmentCode} diperbarui`,
-        relatedId: id,
-        timestamp: new Date()
+        relatedId: id
       });
       
       return res.json(updatedConsignment);
