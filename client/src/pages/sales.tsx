@@ -306,10 +306,17 @@ const Sales = () => {
       (sum, item) => sum + (item.quantity * item.pricePerItem), 0
     );
     
-    // Tambahkan amount ke data yang dikirim ke server
+    // Tambahkan amount dan items ke data yang dikirim ke server
     const saleData = {
-      ...data,
-      amount: totalAmount
+      consignmentId: data.consignmentId,
+      amount: totalAmount,
+      notes: data.notes,
+      // Kirim items untuk diproses di server untuk mengurangi jumlah produk konsinyasi
+      items: data.items.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        pricePerItem: item.pricePerItem
+      }))
     };
     
     addConsignmentSaleMutation.mutate(saleData);
