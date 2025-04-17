@@ -8,6 +8,8 @@ import {
   activities, type Activity, type InsertActivity,
   shirtTypes, shirtSizes
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, gte, lte, desc, gt, sql, asc, count, sum } from "drizzle-orm";
 
 // Storage interface for all CRUD operations
 export interface IStorage {

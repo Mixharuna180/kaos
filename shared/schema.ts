@@ -166,6 +166,14 @@ export const insertSaleSchema = createInsertSchema(sales).omit({
 export type InsertSale = z.infer<typeof insertSaleSchema>;
 export type Sale = typeof sales.$inferSelect;
 
+// Sales relations
+export const salesRelations = relations(sales, ({ one }) => ({
+  consignment: one(consignments, {
+    fields: [sales.consignmentId],
+    references: [consignments.id],
+  }),
+}));
+
 // Activities schema for activity log
 export const activities = pgTable("activities", {
   id: serial("id").primaryKey(),
