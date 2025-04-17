@@ -647,6 +647,7 @@ const Consignment = () => {
                         <Button
                           variant="ghost"
                           size="sm"
+                          onClick={() => handleEditClick(consignment)}
                           title="Edit Konsinyasi"
                         >
                           <Edit className="h-4 w-4 text-primary" />
