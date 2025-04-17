@@ -268,6 +268,29 @@ const Consignment = () => {
     },
   });
   
+  const editConsignmentMutation = useMutation({
+    mutationFn: (data: EditFormValues & { consignmentId: number }) => {
+      const { consignmentId, ...rest } = data;
+      return apiRequest("PATCH", `/api/consignments/${consignmentId}`, rest);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/consignments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/stats/consignments"] });
+      toast({
+        title: "Konsinyasi berhasil diperbarui",
+        description: "Data konsinyasi telah diperbarui.",
+      });
+      setIsEditDialogOpen(false);
+    },
+    onError: (error) => {
+      toast({
+        title: "Gagal memperbarui konsinyasi",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
   // Form handlers
   const onAddResellerSubmit = (data: ResellerFormValues) => {
     addResellerMutation.mutate(data);
@@ -289,6 +312,15 @@ const Consignment = () => {
   const onReturnSubmit = (data: ReturnFormValues) => {
     if (selectedConsignment) {
       processReturnMutation.mutate({
+        ...data,
+        consignmentId: selectedConsignment.id,
+      });
+    }
+  };
+  
+  const onEditSubmit = (data: EditFormValues) => {
+    if (selectedConsignment) {
+      editConsignmentMutation.mutate({
         ...data,
         consignmentId: selectedConsignment.id,
       });
@@ -349,6 +381,9 @@ const Consignment = () => {
   // Handle edit button click
   const handleEditClick = (consignment: any) => {
     setSelectedConsignment(consignment);
+    editForm.reset({
+      notes: consignment.notes || "",
+    });
     setIsEditDialogOpen(true);
   };
 
@@ -1257,6 +1292,57 @@ const Consignment = () => {
                   disabled={processReturnMutation.isPending}
                 >
                   {processReturnMutation.isPending ? "Memproses..." : "Proses Pengembalian"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Edit Consignment Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Konsinyasi</DialogTitle>
+            <DialogDescription>
+              Edit informasi konsinyasi {selectedConsignment?.consignmentCode}.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+              <FormField
+                control={editForm.control}
+                name="notes"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Catatan</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Catatan tambahan untuk konsinyasi ini..."
+                        className="resize-none"
+                        {...field}
+                        value={field.value || ""}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditDialogOpen(false)}
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={editConsignmentMutation.isPending}
+                >
+                  {editConsignmentMutation.isPending ? "Menyimpan..." : "Simpan Perubahan"}
                 </Button>
               </DialogFooter>
             </form>
