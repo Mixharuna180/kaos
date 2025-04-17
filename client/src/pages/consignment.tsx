@@ -101,9 +101,9 @@ const Consignment = () => {
   const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
   const [selectedConsignment, setSelectedConsignment] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterReseller, setFilterReseller] = useState("");
-  const [filterType, setFilterType] = useState("");
-  const [filterStatus, setFilterStatus] = useState("");
+  const [filterReseller, setFilterReseller] = useState("all");
+  const [filterType, setFilterType] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
   
   // Queries
   const { data: consignments, isLoading: isLoadingConsignments } = useQuery({
@@ -360,14 +360,16 @@ const Consignment = () => {
           consignment.consignmentCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
           (consignment.reseller && consignment.reseller.name.toLowerCase().includes(searchTerm.toLowerCase()));
         
-        const matchesReseller = filterReseller ? consignment.resellerId === parseInt(filterReseller) : true;
+        const matchesReseller = filterReseller === "all" || 
+          (filterReseller && consignment.resellerId === parseInt(filterReseller));
         
-        const matchesType = filterType ? 
-          (consignment.items && consignment.items.some((item: any) => 
+        const matchesType = filterType === "all" || 
+          (filterType && consignment.items && consignment.items.some((item: any) => 
             item.product && item.product.type === filterType
-          )) : true;
+          ));
         
-        const matchesStatus = filterStatus ? consignment.status === filterStatus : true;
+        const matchesStatus = filterStatus === "all" || 
+          (filterStatus && consignment.status === filterStatus);
         
         return matchesSearch && matchesReseller && matchesType && matchesStatus;
       })
@@ -475,7 +477,7 @@ const Consignment = () => {
                 <SelectValue placeholder="Semua Reseller" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Reseller</SelectItem>
+                <SelectItem value="all">Semua Reseller</SelectItem>
                 {resellers?.map((reseller: any) => (
                   <SelectItem key={reseller.id} value={reseller.id.toString()}>
                     {reseller.name}
@@ -492,7 +494,7 @@ const Consignment = () => {
                 <SelectValue placeholder="Semua Jenis" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Jenis</SelectItem>
+                <SelectItem value="all">Semua Jenis</SelectItem>
                 {products?.map((product: any) => (
                   <SelectItem key={product.id} value={product.type}>
                     {product.type}
@@ -509,7 +511,7 @@ const Consignment = () => {
                 <SelectValue placeholder="Semua Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Status</SelectItem>
+                <SelectItem value="all">Semua Status</SelectItem>
                 <SelectItem value="aktif">Aktif</SelectItem>
                 <SelectItem value="lunas">Lunas</SelectItem>
                 <SelectItem value="sebagian">Sebagian</SelectItem>
