@@ -88,10 +88,16 @@ const returnFormSchema = z.object({
   notes: z.string().optional(),
 });
 
+// Form schema for edit
+const editFormSchema = z.object({
+  notes: z.string().optional(),
+});
+
 type ResellerFormValues = z.infer<typeof resellerFormSchema>;
 type ConsignmentFormValues = z.infer<typeof consignmentFormSchema>;
 type PaymentFormValues = z.infer<typeof paymentFormSchema>;
 type ReturnFormValues = z.infer<typeof returnFormSchema>;
+type EditFormValues = z.infer<typeof editFormSchema>;
 
 const Consignment = () => {
   const { toast } = useToast();
@@ -99,6 +105,7 @@ const Consignment = () => {
   const [isResellerDialogOpen, setIsResellerDialogOpen] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedConsignment, setSelectedConsignment] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterReseller, setFilterReseller] = useState("all");
@@ -153,6 +160,13 @@ const Consignment = () => {
     resolver: zodResolver(returnFormSchema),
     defaultValues: {
       items: [{ productId: 0, returnQuantity: 1 }],
+      notes: "",
+    },
+  });
+
+  const editForm = useForm<EditFormValues>({
+    resolver: zodResolver(editFormSchema),
+    defaultValues: {
       notes: "",
     },
   });
@@ -335,10 +349,7 @@ const Consignment = () => {
   // Handle edit button click
   const handleEditClick = (consignment: any) => {
     setSelectedConsignment(consignment);
-    toast({
-      title: "Fitur dalam pengembangan",
-      description: "Fungsi edit konsinyasi akan segera tersedia",
-    });
+    setIsEditDialogOpen(true);
   };
 
   // Handle return button click
