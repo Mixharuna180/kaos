@@ -47,6 +47,7 @@ import {
   Users,
   CircleCheck,
   CircleMinus,
+  Trash,
 } from "lucide-react";
 import { formatNumber, formatCurrency, formatDate, generateConsignmentCode } from "@/lib/utils";
 
@@ -430,7 +431,7 @@ const Consignment = () => {
               </p>
             </div>
             <div className="p-2 bg-primary/10 rounded-full">
-              <Box className="h-6 w-6 text-primary" />
+              <Users className="h-6 w-6 text-primary" />
             </div>
           </div>
         </Card>
