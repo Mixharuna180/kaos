@@ -89,6 +89,16 @@ const Reports = () => {
   // Query to get report data
   const { data: reportData, isLoading } = useQuery({
     queryKey: ["/api/reports", reportType, startDate, endDate],
+    enabled: !!startDate && !!endDate,
+    queryFn: async () => {
+      // Memastikan semua parameter dikirim ke endpoint
+      const url = `/api/reports?type=${reportType}&startDate=${startDate}&endDate=${endDate}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Gagal mengambil data laporan');
+      }
+      return response.json();
+    }
   });
   
   // Colors for charts
