@@ -249,7 +249,7 @@ const Inventory = () => {
                 <SelectValue placeholder="Semua Jenis" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Jenis</SelectItem>
+                <SelectItem value="all">Semua Jenis</SelectItem>
                 {shirtTypes.map((type) => (
                   <SelectItem key={type} value={type}>
                     {type}
@@ -266,7 +266,7 @@ const Inventory = () => {
                 <SelectValue placeholder="Semua Ukuran" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Ukuran</SelectItem>
+                <SelectItem value="all">Semua Ukuran</SelectItem>
                 {shirtSizes.map((size) => (
                   <SelectItem key={size} value={size}>
                     {size}
@@ -283,7 +283,7 @@ const Inventory = () => {
                 <SelectValue placeholder="Semua Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Status</SelectItem>
+                <SelectItem value="all">Semua Status</SelectItem>
                 <SelectItem value="Stok Baik">Stok Baik</SelectItem>
                 <SelectItem value="Stok Rendah">Stok Rendah</SelectItem>
                 <SelectItem value="Perlu Restok">Perlu Restok</SelectItem>

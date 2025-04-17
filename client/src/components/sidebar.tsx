@@ -65,9 +65,9 @@ const Sidebar = () => {
           {routes.map((route) => (
             <li key={route.path}>
               <Link href={route.path}>
-                <a
+                <div
                   className={cn(
-                    "block py-2 px-4 rounded mb-1 flex items-center",
+                    "block py-2 px-4 rounded mb-1 flex items-center cursor-pointer",
                     location === route.path
                       ? "text-neutral-100 bg-primary"
                       : "text-neutral-300 hover:bg-neutral-700 hover:text-white"
@@ -76,7 +76,7 @@ const Sidebar = () => {
                 >
                   {route.icon}
                   {route.name}
-                </a>
+                </div>
               </Link>
             </li>
           ))}
