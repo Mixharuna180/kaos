@@ -195,6 +195,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
             pricePerItem: item.pricePerItem
           });
         }
+        
+        // Hitung ulang total item dan nilai
+        let totalItems = 0;
+        let totalValue = 0;
+        
+        for (const item of items) {
+          totalItems += item.quantity;
+          totalValue += item.quantity * item.pricePerItem;
+        }
+        
+        // Update konsinyasi dengan nilai total yang dihitung
+        await storage.updateConsignment(consignment.id, {
+          totalItems,
+          totalValue
+        });
       }
       
       // Get the complete consignment with items

@@ -330,7 +330,8 @@ export class MemStorage implements IStorage {
       id, 
       paidAmount: 0, 
       status: "aktif", 
-      takenDate 
+      takenDate,
+      returnDate: null
     };
     
     this.consignments.set(id, consignment);
