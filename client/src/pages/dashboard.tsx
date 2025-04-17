@@ -101,7 +101,7 @@ const Dashboard = () => {
           <CardContent className="p-4">
             <div className="flex justify-between">
               <div>
-                <p className="text-neutral-500 text-sm">Total Konsinyasi</p>
+                <p className="text-neutral-500 text-sm">Total Produk Konsinyasi</p>
                 <p className="text-2xl font-bold text-neutral-800">
                   {loadingConsignmentStats ? "..." : formatNumber(consignmentStats?.totalConsigned || 0)}
                 </p>
