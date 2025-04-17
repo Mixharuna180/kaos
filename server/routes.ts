@@ -440,7 +440,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         notes
       });
       
-      // Calculate items to reduce from consignment
+      // Track items sold details
+      const soldItemsInfo = [];
       let totalItemsSold = 0;
       
       // If items are provided, update consignment items
@@ -450,7 +451,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Process each sold item
         for (const soldItem of items) {
-          const { productId, quantity } = soldItem;
+          const { productId, quantity, pricePerItem } = soldItem;
           
           // Find matching consignment item
           const consignmentItem = consignmentItems.find(item => item.productId === productId);
@@ -469,6 +470,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Add to sold total
             totalItemsSold += quantity;
             
+            // Store information about this sold item for reporting
+            const product = await storage.getProduct(productId);
+            soldItemsInfo.push({
+              productId,
+              productCode: product?.productCode || '',
+              type: product?.type || '',
+              size: product?.size || '',
+              quantity,
+              pricePerItem,
+              subtotal: quantity * pricePerItem
+            });
+            
             // Update the consignment item by increasing returned quantity 
             // (using the same mechanism as returns to track items no longer in consignment)
             await storage.updateConsignmentItem(consignmentItem.id, {
@@ -478,12 +491,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Update the consignment: reduce totalValue, increment paidAmount
-      // Calculate remaining value after this sale
+      // Calculate the value to reduce based on the actual amount of the sale
+      // This ensures that the totalValue and paidAmount are accurately reflecting sales
       const newTotalValue = Math.max(0, consignment.totalValue - amount);
       const newPaidAmount = consignment.paidAmount + amount;
       
-      // Calculate new totalItems
+      // Calculate new totalItems based on the actual items sold
       const newTotalItems = Math.max(0, consignment.totalItems - totalItemsSold);
       
       // Determine the new status based on amounts
@@ -504,10 +517,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         status: newStatus
       });
       
-      // Create activity record
+      // Create activity record with detailed information
+      let productDetails = "";
+      if (soldItemsInfo.length > 0) {
+        const firstItem = soldItemsInfo[0];
+        productDetails = `${firstItem.productCode} ${firstItem.type} ${firstItem.size}`;
+        if (soldItemsInfo.length > 1) {
+          productDetails += ` dan ${soldItemsInfo.length - 1} produk lainnya`;
+        }
+      }
+      
       await storage.createActivity({
         activityType: "penjualan",
-        description: `Penjualan konsinyasi: Rp ${formatNumber(amount)} dari ${consignment.consignmentCode} (${totalItemsSold} item)`,
+        description: `Penjualan konsinyasi: Rp ${formatNumber(amount)} dari ${consignment.consignmentCode} (${totalItemsSold} item: ${productDetails})`,
         relatedId: sale.id
       });
       
