@@ -683,11 +683,21 @@ const Consignment = () => {
                       <div className="text-sm text-neutral-600">
                         {formatNumber(consignment.totalItems)}
                       </div>
+                      {consignment.status === "sebagian" && (
+                        <div className="text-xs text-amber-600">
+                          {formatNumber(consignment.paidAmount / 40000)} item terjual
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-neutral-600">
                         {formatCurrency(consignment.totalValue)}
                       </div>
+                      {consignment.paidAmount > 0 && (
+                        <div className="text-xs text-amber-600">
+                          {formatCurrency(consignment.paidAmount)} telah dibayar
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-neutral-600">
