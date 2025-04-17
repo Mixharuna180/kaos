@@ -168,7 +168,7 @@ const Sales = () => {
   });
   
   const addConsignmentSaleMutation = useMutation({
-    mutationFn: (data: ConsignmentSaleFormValues) => {
+    mutationFn: (data: any) => {
       const saleCode = generateSaleCode();
       return apiRequest("POST", "/api/sales/consignment", { ...data, saleCode });
     },
@@ -184,7 +184,7 @@ const Sales = () => {
       setIsConsignmentSaleDialogOpen(false);
       consignmentSaleForm.reset({
         consignmentId: 0,
-        amount: 0,
+        items: [{ productId: 0, quantity: 1, pricePerItem: 0 }],
         notes: "",
       });
     },
@@ -292,9 +292,27 @@ const Sales = () => {
     }
   };
   
+  // Mendapatkan jumlah maksimal yang tersedia untuk produk tertentu
+  const getMaxQuantity = (productId: number): number => {
+    if (!productId) return 1;
+    const product = consignmentProducts.find(p => p.id === productId);
+    return product ? product.availableQuantity : 1;
+  };
+  
   // Submit penjualan konsinyasi
   const onConsignmentSaleSubmit = (data: ConsignmentSaleFormValues) => {
-    addConsignmentSaleMutation.mutate(data);
+    // Hitung total amount berdasarkan items
+    const totalAmount = data.items.reduce(
+      (sum, item) => sum + (item.quantity * item.pricePerItem), 0
+    );
+    
+    // Tambahkan amount ke data yang dikirim ke server
+    const saleData = {
+      ...data,
+      amount: totalAmount
+    };
+    
+    addConsignmentSaleMutation.mutate(saleData);
   };
   
   // Add product item to direct sale form
@@ -831,25 +849,162 @@ const Sales = () => {
                 )}
               />
               
-              <FormField
-                control={consignmentSaleForm.control}
-                name="amount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Jumlah Penjualan</FormLabel>
-                    <FormControl>
-                      <NumberInput
-                        value={field.value}
-                        onChange={field.onChange}
-                        min={1}
-                        prefix="Rp "
-                        disabled={addConsignmentSaleMutation.isPending}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* Tabel Produk Konsinyasi */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-sm font-medium">Produk yang Dijual dari Konsinyasi</h3>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addConsignmentProductItem}
+                    disabled={!selectedConsignmentId || consignmentProducts.length === 0 || addConsignmentSaleMutation.isPending}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Tambah Produk
+                  </Button>
+                </div>
+                
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Produk</TableHead>
+                      <TableHead>Jumlah</TableHead>
+                      <TableHead>Harga/Item</TableHead>
+                      <TableHead>Subtotal</TableHead>
+                      <TableHead></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {consignmentSaleForm.watch("items")?.map((_, index) => (
+                      <TableRow key={index}>
+                        <TableCell>
+                          <FormField
+                            control={consignmentSaleForm.control}
+                            name={`items.${index}.productId`}
+                            render={({ field }) => (
+                              <FormItem className="mb-0">
+                                <FormControl>
+                                  <Select
+                                    value={field.value ? field.value.toString() : ""}
+                                    onValueChange={(value) => {
+                                      const productId = parseInt(value);
+                                      field.onChange(productId);
+                                      
+                                      // Temukan produk dari konsinyasi yang dipilih
+                                      const selectedProduct = consignmentProducts.find(p => p.id === productId);
+                                      if (selectedProduct) {
+                                        consignmentSaleForm.setValue(`items.${index}.pricePerItem`, selectedProduct.pricePerItem);
+                                      }
+                                    }}
+                                    disabled={addConsignmentSaleMutation.isPending}
+                                  >
+                                    <SelectTrigger className="w-full">
+                                      <SelectValue placeholder="Pilih Produk" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {consignmentProducts.map((item) => (
+                                        <SelectItem 
+                                          key={item.id} 
+                                          value={item.id.toString()}
+                                          disabled={item.availableQuantity <= 0}
+                                        >
+                                          {`${item.product?.productCode} - ${item.product?.type} ${item.product?.size} (${item.availableQuantity} tersedia)`}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <FormField
+                            control={consignmentSaleForm.control}
+                            name={`items.${index}.quantity`}
+                            render={({ field }) => (
+                              <FormItem className="mb-0">
+                                <FormControl>
+                                  <NumberInput
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    min={1}
+                                    max={getMaxQuantity(consignmentSaleForm.watch(`items.${index}.productId`))}
+                                    className="w-20"
+                                    disabled={addConsignmentSaleMutation.isPending}
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <FormField
+                            control={consignmentSaleForm.control}
+                            name={`items.${index}.pricePerItem`}
+                            render={({ field }) => (
+                              <FormItem className="mb-0">
+                                <FormControl>
+                                  <NumberInput
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    min={0}
+                                    prefix="Rp "
+                                    className="w-32"
+                                    disabled={true} // Harga dari konsinyasi, tidak bisa diubah
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          {formatCurrency(
+                            (consignmentSaleForm.watch(`items.${index}.quantity`) || 0) * 
+                            (consignmentSaleForm.watch(`items.${index}.pricePerItem`) || 0)
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeConsignmentProductItem(index)}
+                            disabled={consignmentSaleForm.watch("items").length <= 1 || addConsignmentSaleMutation.isPending}
+                          >
+                            <Trash className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                
+                <div className="flex justify-end mt-4">
+                  <div className="text-sm">
+                    <div className="flex justify-between mb-1">
+                      <span className="font-medium mr-8">Total Item:</span>
+                      <span>
+                        {consignmentSaleForm.watch("items")?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium mr-8">Total Nilai:</span>
+                      <span className="font-bold">
+                        {formatCurrency(
+                          consignmentSaleForm.watch("items")?.reduce(
+                            (sum, item) => sum + ((item.quantity || 0) * (item.pricePerItem || 0)), 0
+                          ) || 0
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
               
               <FormField
                 control={consignmentSaleForm.control}
