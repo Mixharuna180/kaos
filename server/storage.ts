@@ -1377,8 +1377,19 @@ export class DatabaseStorage implements IStorage {
     // Get active resellers
     const activeResellerIds = new Set(activeConsignments.map(c => c.resellerId));
     
-    // Get total consigned
-    const totalConsigned = consignmentsData.reduce((sum, c) => sum + c.totalItems, 0);
+    // Dapatkan total item konsinyasi awal
+    const totalInitialConsigned = consignmentsData.reduce((sum, c) => sum + c.totalItems, 0);
+    
+    // Dapatkan data penjualan konsinyasi untuk dikurangkan
+    const salesData = await db.select().from(sales);
+    const consignmentSales = salesData.filter(sale => sale.consignmentId !== null);
+    
+    // Perkirakan jumlah item yang terjual dari penjualan konsinyasi
+    // Kita gunakan perkiraan 40.000 per item untuk menghitung berapa item yang terjual
+    const soldItems = consignmentSales.reduce((sum, sale) => sum + Math.round(sale.amount / 40000), 0);
+    
+    // Total produk konsinyasi adalah total awal dikurangi yang sudah terjual
+    const totalConsigned = totalInitialConsigned - soldItems;
     
     // Get pending payment
     const pendingPayment = consignmentsData.reduce(
