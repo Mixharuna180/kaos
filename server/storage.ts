@@ -576,10 +576,18 @@ export class MemStorage implements IStorage {
       .filter(sale => sale.saleDate >= monthStart)
       .reduce((total, sale) => total + sale.amount, 0);
     
-    // Total items sold (rough estimate)
-    const totalItemsSold = Math.round(
-      sales.reduce((total, sale) => total + sale.amount, 0) / 100000
-    );
+    // Ambil total item terjual dari penjualan konsinyasi
+    const totalConsignmentItems = Array.from(this.consignmentItems.values())
+      .filter(item => item.returnedQuantity > 0)
+      .reduce((total, item) => total + item.returnedQuantity, 0);
+      
+    // Tambahkan total item dari penjualan langsung (estimasi berdasarkan harga rata-rata)
+    const directSales = sales.filter(sale => !sale.consignmentId);
+    const directSalesTotalAmount = directSales.reduce((total, sale) => total + sale.amount, 0);
+    const directSalesTotalItems = Math.round(directSalesTotalAmount / 40000); // Rata-rata 40k per item
+    
+    // Total keseluruhan item terjual
+    const totalItemsSold = totalConsignmentItems + directSalesTotalItems;
     
     return {
       dailySales,
@@ -1384,18 +1392,28 @@ export class DatabaseStorage implements IStorage {
       .filter(sale => new Date(sale.saleDate) >= firstDayOfMonth)
       .reduce((sum, sale) => sum + sale.amount, 0);
     
-    // Get total items sold
+    // Ambil total item terjual dari penjualan konsinyasi
     const consignmentSales = salesData.filter(sale => sale.consignmentId);
     const directSales = salesData.filter(sale => !sale.consignmentId);
     
-    // Assume an average of 2 items per direct sale
-    const estimatedItemsSold = directSales.length * 2 + consignmentSales.length;
+    // Ambil data konsinyasi item untuk menghitung jumlah sebenarnya
+    const consignmentItemsData = await db.select().from(consignmentItems);
+    const totalConsignmentItems = consignmentItemsData
+      .filter(item => item.returnedQuantity > 0)
+      .reduce((total, item) => total + item.returnedQuantity, 0);
+    
+    // Tambahkan jumlah item perkiraan dari penjualan langsung (rata-rata 40rb per item)
+    const directSalesTotalAmount = directSales.reduce((total, sale) => total + sale.amount, 0);
+    const directSalesTotalItems = Math.round(directSalesTotalAmount / 40000);
+    
+    // Total keseluruhan
+    const totalItemsSold = totalConsignmentItems + directSalesTotalItems;
     
     return {
       totalSales: salesData.length,
       dailySales,
       monthlySales,
-      totalItemsSold: estimatedItemsSold,
+      totalItemsSold,
       directSalesCount: directSales.length,
       consignmentSalesCount: consignmentSales.length,
     };
