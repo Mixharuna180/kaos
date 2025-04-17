@@ -1368,8 +1368,10 @@ export class DatabaseStorage implements IStorage {
   }
   
   async getConsignmentStats(): Promise<any> {
-    // Get active consignments
+    // Get all consignments
     const consignmentsData = await db.select().from(consignments);
+    
+    // Get active consignments (status = aktif or sebagian)
     const activeConsignments = consignmentsData.filter(
       c => c.status === "aktif" || c.status === "sebagian"
     );
@@ -1377,19 +1379,15 @@ export class DatabaseStorage implements IStorage {
     // Get active resellers
     const activeResellerIds = new Set(activeConsignments.map(c => c.resellerId));
     
-    // Dapatkan total item konsinyasi awal
-    const totalInitialConsigned = consignmentsData.reduce((sum, c) => sum + c.totalItems, 0);
+    // Get consignment items untuk mengitung total item konsinyasi aktual
+    const consignmentItemsData = await db.select().from(consignmentItems);
     
-    // Dapatkan data penjualan konsinyasi untuk dikurangkan
-    const salesData = await db.select().from(sales);
-    const consignmentSales = salesData.filter(sale => sale.consignmentId !== null);
-    
-    // Perkirakan jumlah item yang terjual dari penjualan konsinyasi
-    // Kita gunakan perkiraan 40.000 per item untuk menghitung berapa item yang terjual
-    const soldItems = consignmentSales.reduce((sum, sale) => sum + Math.round(sale.amount / 40000), 0);
-    
-    // Total produk konsinyasi adalah total awal dikurangi yang sudah terjual
-    const totalConsigned = totalInitialConsigned - soldItems;
+    // Hitung total item konsinyasi aktif: 
+    // Hanya menjumlahkan total items di konsinyasi yang berstatus aktif/sebagian
+    const totalActiveConsigned = activeConsignments.reduce(
+      (sum, c) => sum + c.totalItems, 
+      0
+    );
     
     // Get pending payment
     const pendingPayment = consignmentsData.reduce(
@@ -1401,7 +1399,7 @@ export class DatabaseStorage implements IStorage {
       totalConsignments: consignmentsData.length,
       activeConsignments: activeConsignments.length,
       activeResellers: activeResellerIds.size,
-      totalConsigned,
+      totalConsigned: totalActiveConsigned,
       pendingPayment,
     };
   }

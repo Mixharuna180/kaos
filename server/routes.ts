@@ -444,8 +444,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const soldItemsInfo = [];
       let totalItemsSold = 0;
       
-      // If items are provided, update consignment items
-      if (items && Array.isArray(items) && items.length > 0) {
+      // Jika items tidak diberikan, kita gunakan estimasi berdasarkan nilai penjualan
+      if (!items || !Array.isArray(items) || items.length === 0) {
+        // Estimasi berapa item yang terjual berdasarkan nilai penjualan
+        // Menggunakan rata-rata Rp 40.000 per item
+        const estimatedItemCount = Math.ceil(amount / 40000);
+        totalItemsSold = estimatedItemCount;
+      } 
+      // Jika items diberikan, update setiap item konsinyasi
+      else {
         // Get all consignment items
         const consignmentItems = await storage.getConsignmentItems(consignmentId);
         
