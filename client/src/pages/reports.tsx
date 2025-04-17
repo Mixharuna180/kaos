@@ -368,19 +368,19 @@ const Reports = () => {
           <CardHeader className="pb-2">
             <div className="flex justify-between items-center">
               <CardTitle className="text-lg">Grafik</CardTitle>
-              <Tabs value={activeChartTab} onValueChange={setActiveChartTab} className="w-auto">
+              <div className="w-auto">
                 <TabsList>
-                  <TabsTrigger value="bar" className="px-2 py-1">
+                  <TabsTrigger value="bar" onClick={() => setActiveChartTab("bar")} className="px-2 py-1">
                     <BarChart4 className="h-4 w-4" />
                   </TabsTrigger>
-                  <TabsTrigger value="line" className="px-2 py-1">
+                  <TabsTrigger value="line" onClick={() => setActiveChartTab("line")} className="px-2 py-1">
                     <LineChartIcon className="h-4 w-4" />
                   </TabsTrigger>
-                  <TabsTrigger value="pie" className="px-2 py-1">
+                  <TabsTrigger value="pie" onClick={() => setActiveChartTab("pie")} className="px-2 py-1">
                     <PieChartIcon className="h-4 w-4" />
                   </TabsTrigger>
                 </TabsList>
-              </Tabs>
+              </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -393,7 +393,7 @@ const Reports = () => {
                 <p className="text-neutral-500">Tidak ada data untuk ditampilkan</p>
               </div>
             ) : (
-              <div className="h-64">
+              <Tabs value={activeChartTab} className="h-64">
                 <TabsContent value="bar" className="mt-0 h-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart
@@ -469,7 +469,7 @@ const Reports = () => {
                     </PieChart>
                   </ResponsiveContainer>
                 </TabsContent>
-              </div>
+              </Tabs>
             )}
           </CardContent>
         </Card>
