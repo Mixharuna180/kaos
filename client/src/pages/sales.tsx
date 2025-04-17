@@ -77,7 +77,13 @@ const directSaleFormSchema = z.object({
 // Form schema for consignment sale
 const consignmentSaleFormSchema = z.object({
   consignmentId: z.number().min(1, { message: "Konsinyasi harus dipilih" }),
-  amount: z.number().min(1, { message: "Jumlah penjualan harus minimal 1" }),
+  items: z.array(
+    z.object({
+      productId: z.number().min(1, { message: "Produk harus dipilih" }),
+      quantity: z.number().min(1, { message: "Jumlah harus minimal 1" }),
+      pricePerItem: z.number().min(0, { message: "Harga tidak boleh negatif" }),
+    })
+  ).min(1, { message: "Minimal 1 produk harus dipilih" }),
   notes: z.string().optional(),
 });
 
@@ -94,6 +100,8 @@ const Sales = () => {
   const [filterDateFrom, setFilterDateFrom] = useState("");
   const [filterDateTo, setFilterDateTo] = useState("");
   const [filterType, setFilterType] = useState("all");
+  const [selectedConsignmentId, setSelectedConsignmentId] = useState<number | null>(null);
+  const [consignmentProducts, setConsignmentProducts] = useState<any[]>([]);
   
   // Queries
   const { data: sales, isLoading: isLoadingSales } = useQuery({
@@ -125,7 +133,7 @@ const Sales = () => {
     resolver: zodResolver(consignmentSaleFormSchema),
     defaultValues: {
       consignmentId: 0,
-      amount: 0,
+      items: [{ productId: 0, quantity: 1, pricePerItem: 0 }],
       notes: "",
     },
   });
@@ -216,6 +224,75 @@ const Sales = () => {
     addDirectSaleMutation.mutate(data);
   };
   
+  // Fungsi untuk memuat produk-produk konsinyasi
+  const loadConsignmentProducts = (consignmentId: number) => {
+    if (!consignments) return;
+    setSelectedConsignmentId(consignmentId);
+    
+    // Cari konsinyasi yang dipilih
+    const selectedConsignment = consignments.find((c: any) => c.id === consignmentId);
+    if (!selectedConsignment || !selectedConsignment.items) {
+      setConsignmentProducts([]);
+      return;
+    }
+    
+    // Siapkan produk-produk yang tersedia di konsinyasi ini
+    const availableProducts = selectedConsignment.items
+      .filter((item: any) => {
+        // Filter yang quantitynya belum habis
+        const availableQuantity = item.quantity - (item.returnedQuantity || 0);
+        return availableQuantity > 0 && item.product;
+      })
+      .map((item: any) => ({
+        id: item.productId,
+        availableQuantity: item.quantity - (item.returnedQuantity || 0),
+        product: item.product,
+        pricePerItem: item.pricePerItem
+      }));
+    
+    setConsignmentProducts(availableProducts);
+    
+    // Reset form dengan produk pertama yang tersedia (jika ada)
+    if (availableProducts.length > 0) {
+      consignmentSaleForm.reset({
+        consignmentId,
+        items: [{ 
+          productId: availableProducts[0].id, 
+          quantity: 1, 
+          pricePerItem: availableProducts[0].pricePerItem 
+        }],
+        notes: ""
+      });
+    } else {
+      consignmentSaleForm.reset({
+        consignmentId,
+        items: [{ productId: 0, quantity: 1, pricePerItem: 0 }],
+        notes: ""
+      });
+    }
+  };
+  
+  // Add consignment product item to form
+  const addConsignmentProductItem = () => {
+    const currentItems = consignmentSaleForm.getValues("items") || [];
+    consignmentSaleForm.setValue("items", [
+      ...currentItems,
+      { productId: 0, quantity: 1, pricePerItem: 0 },
+    ]);
+  };
+  
+  // Remove consignment product item from form
+  const removeConsignmentProductItem = (index: number) => {
+    const currentItems = consignmentSaleForm.getValues("items") || [];
+    if (currentItems.length > 1) {
+      consignmentSaleForm.setValue(
+        "items",
+        currentItems.filter((_, i) => i !== index)
+      );
+    }
+  };
+  
+  // Submit penjualan konsinyasi
   const onConsignmentSaleSubmit = (data: ConsignmentSaleFormValues) => {
     addConsignmentSaleMutation.mutate(data);
   };
@@ -729,7 +806,11 @@ const Sales = () => {
                     <FormLabel>Pilih Konsinyasi</FormLabel>
                     <Select
                       value={field.value ? field.value.toString() : ""}
-                      onValueChange={(value) => field.onChange(parseInt(value))}
+                      onValueChange={(value) => {
+                        const consignmentId = parseInt(value);
+                        field.onChange(consignmentId);
+                        loadConsignmentProducts(consignmentId);
+                      }}
                       disabled={addConsignmentSaleMutation.isPending}
                     >
                       <FormControl>
