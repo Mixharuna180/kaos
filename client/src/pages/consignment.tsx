@@ -506,6 +506,7 @@ const Consignment = () => {
               <p className="text-2xl font-bold text-neutral-800">
                 {isLoadingStats ? "..." : formatNumber(stats?.totalConsigned || 0)}
               </p>
+              {/* Nilai konsinyasi sudah dikurangi penjualan dari konsinyasi reseller */}
             </div>
             <div className="p-2 bg-primary/10 rounded-full">
               <Users className="h-6 w-6 text-primary" />
