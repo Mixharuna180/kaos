@@ -1,5 +1,6 @@
 import { pgTable, text, serial, integer, boolean, timestamp, doublePrecision } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
+import { relations } from "drizzle-orm";
 import { z } from "zod";
 
 // Base user schema
@@ -16,6 +17,11 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+// User relations
+export const usersRelations = relations(users, ({ many }) => ({
+  activities: many(activities),
+}));
 
 // T-shirt types
 export const shirtTypes = [
@@ -51,6 +57,11 @@ export const insertProductSchema = createInsertSchema(products).omit({
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type Product = typeof products.$inferSelect;
 
+// Products relations
+export const productsRelations = relations(products, ({ many }) => ({
+  consignmentItems: many(consignmentItems),
+}));
+
 // Resellers schema
 export const resellers = pgTable("resellers", {
   id: serial("id").primaryKey(),
@@ -67,6 +78,11 @@ export const insertResellerSchema = createInsertSchema(resellers).omit({
 
 export type InsertReseller = z.infer<typeof insertResellerSchema>;
 export type Reseller = typeof resellers.$inferSelect;
+
+// Resellers relations
+export const resellersRelations = relations(resellers, ({ many }) => ({
+  consignments: many(consignments),
+}));
 
 // Consignment schema
 export const consignments = pgTable("consignments", {
@@ -92,6 +108,16 @@ export const insertConsignmentSchema = createInsertSchema(consignments).omit({
 export type InsertConsignment = z.infer<typeof insertConsignmentSchema>;
 export type Consignment = typeof consignments.$inferSelect;
 
+// Consignments relations
+export const consignmentsRelations = relations(consignments, ({ one, many }) => ({
+  reseller: one(resellers, {
+    fields: [consignments.resellerId],
+    references: [resellers.id],
+  }),
+  items: many(consignmentItems),
+  sales: many(sales),
+}));
+
 // Consignment items schema
 export const consignmentItems = pgTable("consignment_items", {
   id: serial("id").primaryKey(),
@@ -109,6 +135,18 @@ export const insertConsignmentItemSchema = createInsertSchema(consignmentItems).
 
 export type InsertConsignmentItem = z.infer<typeof insertConsignmentItemSchema>;
 export type ConsignmentItem = typeof consignmentItems.$inferSelect;
+
+// ConsignmentItems relations
+export const consignmentItemsRelations = relations(consignmentItems, ({ one }) => ({
+  consignment: one(consignments, {
+    fields: [consignmentItems.consignmentId],
+    references: [consignments.id],
+  }),
+  product: one(products, {
+    fields: [consignmentItems.productId],
+    references: [products.id],
+  }),
+}));
 
 // Sales schema
 export const sales = pgTable("sales", {
