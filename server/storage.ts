@@ -526,16 +526,30 @@ export class MemStorage implements IStorage {
       c.status === "aktif" || c.status === "sebagian"
     );
     
-    // Get total consigned items that are not sold yet
-    let totalConsigned = 0;
+    // Get sales data to calculate how many items were actually sold
+    const sales = await this.getSales();
+    const consignmentSales = sales.filter(sale => sale.consignmentId !== null);
+    
+    // Calculate approximate items sold based on sale amount and average price
+    // This is to match the user's requirement to reduce total based on sales
+    let totalItemsSold = 0;
+    
+    // Use returnedQuantity from consignment items as the accurate way to track items sold
     for (const consignment of consignments) {
       if (consignment.items && Array.isArray(consignment.items)) {
         for (const item of consignment.items) {
-          // Count only items that have not been returned or sold
-          totalConsigned += item.quantity - (item.returnedQuantity || 0);
+          totalItemsSold += (item.returnedQuantity || 0);
         }
       }
     }
+    
+    // Get total consigned items initially
+    const totalConsignedInitial = consignments.reduce((total, consignment) => {
+      return total + consignment.totalItems;
+    }, 0);
+    
+    // Calculate remaining items by subtracting sold items
+    const totalConsigned = totalConsignedInitial - totalItemsSold;
     
     // Get number of active resellers
     const activeResellerIds = new Set(
