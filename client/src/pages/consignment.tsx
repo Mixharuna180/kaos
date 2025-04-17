@@ -332,6 +332,15 @@ const Consignment = () => {
     setIsPaymentDialogOpen(true);
   };
   
+  // Handle edit button click
+  const handleEditClick = (consignment: any) => {
+    setSelectedConsignment(consignment);
+    toast({
+      title: "Fitur dalam pengembangan",
+      description: "Fungsi edit konsinyasi akan segera tersedia",
+    });
+  };
+
   // Handle return button click
   const handleReturnClick = (consignment: any) => {
     setSelectedConsignment(consignment);
