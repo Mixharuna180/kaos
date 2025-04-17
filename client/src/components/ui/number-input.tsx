@@ -63,10 +63,12 @@ const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
     // Parse the displayed value back to a number
     const parseNumber = (str: string): number => {
       if (!str) return 0;
-      const cleanStr = str
-        .replace(new RegExp(`\\${prefix}`), "")
-        .replace(new RegExp(`\\${thousandSeparator}`, "g"), "")
-        .replace(/[^0-9-]/g, "");
+      // Handle prefix (like 'Rp ') by removing it
+      let cleanStr = prefix ? str.replace(prefix, "") : str;
+      // Remove thousand separators
+      cleanStr = cleanStr.replace(new RegExp(thousandSeparator.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), "g"), "");
+      // Keep only digits and minus sign
+      cleanStr = cleanStr.replace(/[^0-9-]/g, "");
       
       return Number(cleanStr) || 0;
     };
