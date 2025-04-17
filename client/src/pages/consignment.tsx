@@ -681,7 +681,11 @@ const Consignment = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-neutral-600">
-                        {formatNumber(consignment.totalItems)}
+                        {formatNumber(
+                          // Hitung total item yang masih tersisa
+                          consignment.items?.reduce((total, item) => 
+                            total + (item.quantity - (item.returnedQuantity || 0)), 0) || 0
+                        )}
                       </div>
                       {consignment.status === "sebagian" && (
                         <div className="text-xs text-amber-600">
