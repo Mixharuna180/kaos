@@ -105,8 +105,8 @@ const Reports = () => {
   const COLORS = ['#3B82F6', '#10B981', '#6366F1', '#F59E0B', '#EF4444'];
   
   // Transform data for charts if data exists
-  const salesChartData = reportData?.chartData || [];
-  const productChartData = reportData?.productData || [];
+  const salesChartData = Array.isArray(reportData?.chartData) ? reportData.chartData : [];
+  const productChartData = Array.isArray(reportData?.productData) ? reportData.productData : [];
   
   // Get total from report data
   const getTotal = () => {
@@ -346,7 +346,7 @@ const Reports = () => {
                             label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
                             labelLine={false}
                           >
-                            {productChartData.map((entry, index) => (
+                            {productChartData.map((entry: { name: string, value: number }, index: number) => (
                               <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                           </Pie>
@@ -458,7 +458,7 @@ const Reports = () => {
                         dataKey="value"
                         label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
                       >
-                        {productChartData.map((entry, index) => (
+                        {productChartData.map((entry: { name: string, value: number }, index: number) => (
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                         ))}
                       </Pie>
