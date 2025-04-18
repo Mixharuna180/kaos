@@ -9,7 +9,7 @@ import {
   shirtTypes, shirtSizes
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, gte, lte, desc, gt, sql, asc, count, sum } from "drizzle-orm";
+import { eq, and, gte, lte, desc, gt, sql, asc, count, sum, inArray } from "drizzle-orm";
 
 // Storage interface for all CRUD operations
 export interface IStorage {
@@ -1360,13 +1360,16 @@ export class DatabaseStorage implements IStorage {
     // Get items in active consignments
     const activeConsignmentIds = activeConsignments.map(c => c.id);
     
-    // Dapatkan item konsinyasi yang masih aktif
-    const consignmentItemsData = await db
-      .select()
-      .from(consignmentItems)
-      .where(
-        sql`${consignmentItems.consignmentId} IN (${activeConsignmentIds.join(',')})`
-      );
+    // Dapatkan item konsinyasi yang masih aktif (hanya jika ada konsinyasi aktif)
+    let consignmentItemsData = [];
+    if (activeConsignmentIds.length > 0) {
+      consignmentItemsData = await db
+        .select()
+        .from(consignmentItems)
+        .where(
+          inArray(consignmentItems.consignmentId, activeConsignmentIds)
+        );
+    }
     
     // Hitung total item yang masih dalam konsinyasi aktif (belum dikembalikan/dijual)
     const totalConsigned = consignmentItemsData.reduce(
