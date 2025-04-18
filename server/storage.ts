@@ -1335,8 +1335,8 @@ export class DatabaseStorage implements IStorage {
   async getProductStats(): Promise<any> {
     const productsData = await db.select().from(products);
     
-    // Get total stock
-    const totalStock = productsData.reduce((sum, product) => sum + product.stock, 0);
+    // Get total stock sebelum dikurangi konsinyasi
+    const totalStockRaw = productsData.reduce((sum, product) => sum + product.stock, 0);
     
     // Get total products
     const totalProducts = productsData.length;
@@ -1351,12 +1351,31 @@ export class DatabaseStorage implements IStorage {
       productsByType[product.type] = (productsByType[product.type] || 0) + 1;
     });
     
-    // Get total consigned products
-    const consignmentItemsData = await db.select().from(consignmentItems);
+    // Get active consignments
+    const consignmentsData = await db.select().from(consignments);
+    const activeConsignments = consignmentsData.filter(
+      c => c.status === "aktif" || c.status === "sebagian"
+    );
+    
+    // Get items in active consignments
+    const activeConsignmentIds = activeConsignments.map(c => c.id);
+    
+    // Dapatkan item konsinyasi yang masih aktif
+    const consignmentItemsData = await db
+      .select()
+      .from(consignmentItems)
+      .where(
+        sql`${consignmentItems.consignmentId} IN (${activeConsignmentIds.join(',')})`
+      );
+    
+    // Hitung total item yang masih dalam konsinyasi aktif (belum dikembalikan/dijual)
     const totalConsigned = consignmentItemsData.reduce(
       (sum, item) => sum + (item.quantity - item.returnedQuantity), 
       0
     );
+    
+    // Hitung stok yang sebenarnya tersedia di toko (dikurangi yang di konsinyasi aktif)
+    const totalStock = totalStockRaw - totalConsigned;
     
     return {
       totalStock,
